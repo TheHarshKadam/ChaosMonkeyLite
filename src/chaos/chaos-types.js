@@ -21,7 +21,7 @@ exports.cpuSpike = () => {
     console.log('🔥 CPU SPIKE INJECTED');
     const start = Date.now();
     while (Date.now() - start < 2000) { }
-    next();
+    return;
 };
 
 exports.randomStatus = (req, res) => {
@@ -40,5 +40,5 @@ exports.memoryLeak = () => {
     console.log('🧠 MEMORY LEAK INJECTED');
     global.leak = global.leak || [];
     global.leak.push(new Array(1e6).fill('*'));
-    next();
+    return;
 };
