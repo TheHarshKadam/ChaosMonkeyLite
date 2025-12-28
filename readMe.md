@@ -1,4 +1,4 @@
-# Crash Rhino
+# Chaos Monkey Lite
 
 ## Backend Failure Simulator for APIs
 
