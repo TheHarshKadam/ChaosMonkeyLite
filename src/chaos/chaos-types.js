@@ -14,18 +14,18 @@ exports.error = (req, res) => {
     return res.status(500).json({ error: 'CHAOS 500 ERROR' });
 };
 
-exports.timeout = () => {
+exports.timeout = (req, res) => {
     console.log('⏳ TIMEOUT INJECTED (request will hang)');
     res.setHeader('X-Chaos-Type', 'timeout');
-    return;
+    next();
 };
 
-exports.cpuSpike = () => {
+exports.cpuSpike = (req, res, next) => {  
     console.log('🔥 CPU SPIKE INJECTED');
     res.setHeader('X-Chaos-Type', 'cpuSpike');
     const start = Date.now();
     while (Date.now() - start < 2000) { }
-    return;
+    next();
 };
 
 exports.randomStatus = (req, res) => {
@@ -42,10 +42,10 @@ exports.partialResponse = (req, res) => {
     return res.json({ data: null });
 };
 
-exports.memoryLeak = () => {
+exports.memoryLeak = (req, res, next) => {
     console.log('🧠 MEMORY LEAK INJECTED');
     res.setHeader('X-Chaos-Type', 'memoryLeak');
     global.leak = global.leak || [];
     global.leak.push(new Array(1e6).fill('*'));
-    return;
+    next();
 };

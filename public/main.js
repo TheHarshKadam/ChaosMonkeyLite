@@ -149,7 +149,6 @@ function ChaosControlPanel() {
             const duration = Date.now() - start;
             const data = await res.json();
             
-            // Check response headers for chaos type
             const chaosType = res.headers.get('X-Chaos-Type');
             if (chaosType) {
                 const chaosIcons = {
