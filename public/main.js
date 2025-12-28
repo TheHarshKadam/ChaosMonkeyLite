@@ -6,7 +6,6 @@ const Activity = ({ className }) => <i data-lucide="activity" className={classNa
 
 const API_BASE = 'http://localhost:3000';
 
-
 //IF BACKEND FAILS TO CONNECT DEMO CONFIGURATION RUNS
 const DEMO_CONFIG = {
     enabled: true,
@@ -20,6 +19,20 @@ const DEMO_CONFIG = {
     partialResponse: { enabled: true, probability: 0.05 }
 };
 
+function Snackbar({ message, icon, onClose }) {
+    useEffect(() => {
+        const timer = setTimeout(onClose, 3000);
+        return () => clearTimeout(timer);
+    }, [onClose]);
+
+    return (
+        <div className="fixed bottom-6 right-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3 animate-slide-up z-50 border border-white/20">
+            <span className="text-2xl">{icon}</span>
+            <span className="font-semibold">{message}</span>
+        </div>
+    );
+}
+
 function ChaosControlPanel() {
     const [config, setConfig] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -27,6 +40,7 @@ function ChaosControlPanel() {
     const [testResult, setTestResult] = useState(null);
     const [demoMode, setDemoMode] = useState(false);
     const [connectionError, setConnectionError] = useState(null);
+    const [notification, setNotification] = useState(null);
 
     useEffect(() => {
         fetchConfig();
@@ -40,6 +54,10 @@ function ChaosControlPanel() {
             window.lucide.createIcons();
         }
     });
+
+    const showNotification = (message, icon) => {
+        setNotification({ message, icon });
+    };
 
     const fetchConfig = async () => {
         try {
@@ -80,11 +98,13 @@ function ChaosControlPanel() {
     const killSwitch = async () => {
         if (demoMode) {
             setConfig({ ...config, killSwitch: true });
+            showNotification('Kill Switch Activated!', '🚨');
             return;
         }
         try {
             await fetch(`${API_BASE}/chaos/kill`, { method: 'POST' });
             await fetchConfig();
+            showNotification('Kill Switch Activated!', '🚨');
         } catch (err) {
             console.error('Failed to activate kill switch:', err);
         }
@@ -93,11 +113,13 @@ function ChaosControlPanel() {
     const reviveChaos = async () => {
         if (demoMode) {
             setConfig({ ...config, killSwitch: false });
+            showNotification('Chaos Resumed!', '🟢');
             return;
         }
         try {
             await fetch(`${API_BASE}/chaos/revive`, { method: 'POST' });
             await fetchConfig();
+            showNotification('Chaos Resumed!', '🟢');
         } catch (err) {
             console.error('Failed to revive chaos:', err);
         }
@@ -126,6 +148,34 @@ function ChaosControlPanel() {
             const res = await fetch(`${API_BASE}/test/users`);
             const duration = Date.now() - start;
             const data = await res.json();
+            
+            // Check response headers for chaos type
+            const chaosType = res.headers.get('X-Chaos-Type');
+            if (chaosType) {
+                const chaosIcons = {
+                    'delay': '⏱',
+                    'error': '💥',
+                    'timeout': '⏳',
+                    'cpuSpike': '🔥',
+                    'memoryLeak': '🧠',
+                    'randomStatus': '🎲',
+                    'partialResponse': '🧩'
+                };
+                const chaosNames = {
+                    'delay': 'Delay',
+                    'error': '500 Error',
+                    'timeout': 'Timeout',
+                    'cpuSpike': 'CPU Spike',
+                    'memoryLeak': 'Memory Leak',
+                    'randomStatus': 'Random Status',
+                    'partialResponse': 'Partial Response'
+                };
+                showNotification(
+                    `${chaosNames[chaosType]} Injected!`,
+                    chaosIcons[chaosType]
+                );
+            }
+            
             setTestResult({
                 success: res.ok,
                 status: res.status,
@@ -137,6 +187,7 @@ function ChaosControlPanel() {
                 success: false,
                 error: err.message
             });
+            showNotification('Request Failed!', '❌');
         }
         setTesting(false);
     };
@@ -323,6 +374,31 @@ function ChaosControlPanel() {
                     })}
                 </div>
             </div>
+
+            {/* Snackbar Notification */}
+            {notification && (
+                <Snackbar
+                    message={notification.message}
+                    icon={notification.icon}
+                    onClose={() => setNotification(null)}
+                />
+            )}
+
+            <style>{`
+                @keyframes slide-up {
+                    from {
+                        transform: translateY(100px);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateY(0);
+                        opacity: 1;
+                    }
+                }
+                .animate-slide-up {
+                    animation: slide-up 0.3s ease-out;
+                }
+            `}</style>
         </div>
     );
 }
