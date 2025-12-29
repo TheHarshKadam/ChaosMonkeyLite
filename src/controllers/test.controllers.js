@@ -1,6 +1,6 @@
-exports.getUsers = (req, res)=>{
+exports.getUsers = (req, res) => {
     res.json({
-        success:true,
-        data:["Alice", "Bob", "Charlie", "Drake", "Evelyn", "Frank"]
+        success: true,
+        data: ["Alice", "Bob", "Charlie", "Drake", "Evelyn", "Frank"]
     });
 };

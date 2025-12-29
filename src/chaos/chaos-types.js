@@ -20,7 +20,7 @@ exports.timeout = (req, res) => {
     next();
 };
 
-exports.cpuSpike = (req, res, next) => {  
+exports.cpuSpike = (req, res, next) => {
     console.log('🔥 CPU SPIKE INJECTED');
     res.setHeader('X-Chaos-Type', 'cpuSpike');
     const start = Date.now();
