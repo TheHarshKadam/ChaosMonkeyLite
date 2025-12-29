@@ -4,7 +4,7 @@
 
 Built a Chaos Engineering tool that injects controlled failures at the middleware level to simulate real production outages like latency, partial failures, and timeouts without modifying business logic.
 
-Crash Rhino helps backend developers **test system resilience locally** before these issues hit production.
+Chaos Monkey helps backend developers **test system resilience locally** before these issues hit production.
 
 ## 🧠 Core Idea
 
