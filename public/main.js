@@ -3,10 +3,10 @@ const AlertCircle = () => <i data-lucide="alert-circle"></i>;
 const ServerCrash = ({ className }) => <i data-lucide="server-crash" className={className}></i>;
 const Settings = ({ className }) => <i data-lucide="settings" className={className}></i>;
 const Activity = ({ className }) => <i data-lucide="activity" className={className}></i>;
+const Globe = ({ className }) => <i data-lucide="globe" className={className}></i>;
 
 const API_BASE = 'http://localhost:3000';
 
-//IF BACKEND FAILS TO CONNECT DEMO CONFIGURATION RUNS
 const DEMO_CONFIG = {
     enabled: true,
     killSwitch: false,
@@ -41,6 +41,8 @@ function ChaosControlPanel() {
     const [demoMode, setDemoMode] = useState(false);
     const [connectionError, setConnectionError] = useState(null);
     const [notification, setNotification] = useState(null);
+    const [proxyUrl, setProxyUrl] = useState('https://jsonplaceholder.typicode.com/posts/1');
+    const [testingProxy, setTestingProxy] = useState(false);
 
     useEffect(() => {
         fetchConfig();
@@ -148,7 +150,7 @@ function ChaosControlPanel() {
             const res = await fetch(`${API_BASE}/test/users`);
             const duration = Date.now() - start;
             const data = await res.json();
-            
+
             const chaosType = res.headers.get('X-Chaos-Type');
             if (chaosType) {
                 const chaosIcons = {
@@ -174,7 +176,7 @@ function ChaosControlPanel() {
                     chaosIcons[chaosType]
                 );
             }
-            
+
             setTestResult({
                 success: res.ok,
                 status: res.status,
@@ -189,6 +191,86 @@ function ChaosControlPanel() {
             showNotification('Request Failed!', '❌');
         }
         setTesting(false);
+    };
+
+    const testProxyUrl = async () => {
+        if (!proxyUrl) {
+            showNotification('Please enter a URL', '⚠️');
+            return;
+        }
+
+        if (demoMode) {
+            setTestingProxy(true);
+            setTimeout(() => {
+                setTestResult({
+                    success: true,
+                    status: 200,
+                    duration: 1456,
+                    data: {
+                        success: true,
+                        url: proxyUrl,
+                        contentLength: 12345,
+                        preview: 'Demo mode - backend not connected'
+                    }
+                });
+                setTestingProxy(false);
+                showNotification('Proxy Test (Demo)', '🌐');
+            }, 1500);
+            return;
+        }
+
+        setTestingProxy(true);
+        setTestResult(null);
+        try {
+            const start = Date.now();
+            const res = await fetch(`${API_BASE}/proxy/fetch`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: proxyUrl })
+            });
+            const duration = Date.now() - start;
+            const data = await res.json();
+
+            const chaosType = res.headers.get('X-Chaos-Type');
+            if (chaosType) {
+                const chaosIcons = {
+                    'delay': '⏱',
+                    'error': '💥',
+                    'timeout': '⏳',
+                    'cpuSpike': '🔥',
+                    'memoryLeak': '🧠',
+                    'randomStatus': '🎲',
+                    'partialResponse': '🧩'
+                };
+                const chaosNames = {
+                    'delay': 'Delay',
+                    'error': '500 Error',
+                    'timeout': 'Timeout',
+                    'cpuSpike': 'CPU Spike',
+                    'memoryLeak': 'Memory Leak',
+                    'randomStatus': 'Random Status',
+                    'partialResponse': 'Partial Response'
+                };
+                showNotification(
+                    `${chaosNames[chaosType]} Injected!`,
+                    chaosIcons[chaosType]
+                );
+            }
+
+            setTestResult({
+                success: res.ok,
+                status: res.status,
+                duration,
+                data
+            });
+        } catch (err) {
+            setTestResult({
+                success: false,
+                error: err.message
+            });
+            showNotification('Proxy Request Failed!', '❌');
+        }
+        setTestingProxy(false);
     };
 
     const toggleEnabled = (type) => {
@@ -274,8 +356,8 @@ function ChaosControlPanel() {
                     <button
                         onClick={config.killSwitch ? reviveChaos : killSwitch}
                         className={`${config.killSwitch
-                                ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'
-                                : 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600'
+                            ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'
+                            : 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600'
                             } text-white rounded-2xl p-6 font-bold text-lg transition-all transform hover:scale-105 shadow-lg`}
                     >
                         <AlertCircle className="w-8 h-8 mx-auto mb-2" />
@@ -292,11 +374,41 @@ function ChaosControlPanel() {
                     </button>
                 </div>
 
+                {/* Proxy URL Tester */}
+                <div className="mb-8 bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+                    <div className="flex items-center gap-3 mb-4">
+                        <Globe className="w-6 h-6 text-cyan-400" />
+                        <h2 className="text-white text-xl font-bold">Chaos Proxy</h2>
+                    </div>
+                    <p className="text-gray-300 text-sm mb-4">
+                        Test any external URL with chaos applied
+                    </p>
+                    <div className="flex gap-3">
+                        <input
+                            type="text"
+                            value={proxyUrl}
+                            onChange={(e) => setProxyUrl(e.target.value)}
+                            placeholder="https://example.com"
+                            className="flex-1 bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                        />
+                        <button
+                            onClick={testProxyUrl}
+                            disabled={testingProxy}
+                            className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white px-8 py-3 rounded-lg font-bold transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 whitespace-nowrap"
+                        >
+                            {testingProxy ? 'TESTING...' : 'TEST URL'}
+                        </button>
+                    </div>
+                    <div className="mt-3 text-xs text-gray-400">
+                        Try: https://jsonplaceholder.typicode.com/posts/1
+                    </div>
+                </div>
+
                 {/* Test Result */}
                 {testResult && (
                     <div className={`mb-8 p-6 rounded-2xl border-2 ${testResult.success
-                            ? 'bg-green-500/20 border-green-500'
-                            : 'bg-red-500/20 border-red-500'
+                        ? 'bg-green-500/20 border-green-500'
+                        : 'bg-red-500/20 border-red-500'
                         }`}>
                         <div className="text-white">
                             <div className="font-bold text-xl mb-2">
@@ -307,7 +419,7 @@ function ChaosControlPanel() {
                             )}
                             {testResult.error && <div>Error: {testResult.error}</div>}
                             {testResult.data && (
-                                <pre className="mt-2 text-sm bg-black/30 p-3 rounded overflow-auto">
+                                <pre className="mt-2 text-sm bg-black/30 p-3 rounded overflow-auto max-h-64">
                                     {JSON.stringify(testResult.data, null, 2)}
                                 </pre>
                             )}
@@ -374,7 +486,6 @@ function ChaosControlPanel() {
                 </div>
             </div>
 
-            {/* Snackbar Notification */}
             {notification && (
                 <Snackbar
                     message={notification.message}
